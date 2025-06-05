@@ -11,6 +11,10 @@
 </div>
 
 <div align="center">
+  <img src="https://greasyfork.org/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTc5MDI3LCJwdXIiOiJibG9iX2lkIn19--d965996e4cbdc652b72783e7abb835fe5a3ca0b2/%E6%88%AA%E5%9B%BE_2025-06-02_09-56-43.png?locale=zh-CN" alt="BiliHealth Scan Logo">
+</div>
+
+<div align="center">
   <h3>🎯 精准评估 | 🚀 实时分析 | 💡 智能推荐</h3>
 </div>
 
