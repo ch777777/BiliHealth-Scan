@@ -1,6 +1,130 @@
+# BiliHealth Scan (一键三连健康探针)
+
+[English](#english) | [中文](#chinese)
+
+<div align="center">
+  <img src="https://img.shields.io/github/stars/ch777777/BiliHealth-Scan?style=social" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/forks/ch777777/BiliHealth-Scan?style=social" alt="GitHub Forks">
+  <img src="https://img.shields.io/github/license/ch777777/BiliHealth-Scan" alt="License">
+  <img src="https://img.shields.io/greasyfork/dt/538031" alt="Greasy Fork Downloads">
+  <img src="https://img.shields.io/greasyfork/v/538031" alt="Version">
+</div>
+
+<div align="center">
+  <h3>🎯 精准评估 | 🚀 实时分析 | 💡 智能推荐</h3>
+</div>
+
+<a name="english"></a>
+## English
+
+### Introduction
+BiliHealth Scan is a powerful browser extension that provides real-time visualization of interaction data for Bilibili videos. It automatically displays like rates, coin rates, favorite rates, share rates, and comprehensive ratings, helping users quickly assess video popularity and quality.
+
+### Features
+- Automatic calculation and display of interaction rates (likes, coins, favorites, shares) and comprehensive ratings
+- Support for multiple Bilibili pages (homepage, video page, search page, partitions, user space, history)
+- One-click copy of rating tags for easy sharing
+- Smart adaptation to Bilibili's dark/light mode
+- Automatic rating refresh when switching pages
+- Low performance impact for smooth experience
+
+### Installation
+1. Install a userscript manager (Tampermonkey, Violentmonkey, etc.)
+2. Visit [Greasy Fork](https://greasyfork.org/zh-CN/scripts/538031-b%E7%AB%99-bilibili-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9-%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88-bilihealth-scan)
+3. Click "Install" to add the script to your browser
+
+### Rating System
+The comprehensive rating is calculated using the following weights:
+- Like Rate: 1.5
+- Coin Rate: 4.0
+- Favorite Rate: 3.0
+- Share Rate: 2.0
+
+Rating Levels:
+- 🌈 Perfect (≥100%)
+- 🔥 Overwhelmingly Positive (95-99%)
+- ⭐ Very Positive (80-94%)
+- 👍 Mostly Positive (70-79%)
+- 🤔 Mixed (40-69%)
+- 😐 Mostly Negative (20-39%)
+- ❌ Overwhelmingly Negative (<20%)
+
+### Project Metrics
+
+<div align="center">
+  <img src="https://star-history.com/ch777777/BiliHealth-Scan.svg" alt="Star History Chart">
+</div>
+
+| Metric | Value | Trend |
+|--------|-------|--------|
+| GitHub Stars | ![GitHub Stars](https://img.shields.io/github/stars/ch777777/BiliHealth-Scan?style=social) | 📈 |
+| Greasy Fork Installs | ![Greasy Fork Installs](https://img.shields.io/greasyfork/dt/538031) | 📈 |
+| Current Version | ![Version](https://img.shields.io/greasyfork/v/538031) | 🔄 |
+| License | ![License](https://img.shields.io/github/license/ch777777/BiliHealth-Scan) | 📄 |
+
+### Disclaimer
+All data comes from publicly available Bilibili information. The rating algorithm is based on statistical models and may not fully represent video quality. Users should use their own judgment when interpreting ratings.
+
+---
+
+<a name="chinese"></a>
+## 中文
+
+### 简介
+一键三连健康探针（BiliHealth Scan）是一款强大的浏览器扩展，用于B站视频互动数据的可视化展示。自动显示点赞率、投币率、收藏率、转发率及综合评分，帮助用户快速判断视频热度与质量。
+
+### 主要功能
+- 自动计算并展示点赞、投币、收藏、转发等互动率及综合评分
+- 支持首页、视频页、搜索页、分区、空间、历史等多种B站页面
+- 评分标签一键复制，便于分享
+- 智能适配B站深色/浅色模式
+- 评分展示随页面切换自动刷新
+- 极低性能占用，体验流畅
+
+### 安装方法
+1. 安装用户脚本管理器（如：Tampermonkey、Violentmonkey等）
+2. 访问 [Greasy Fork](https://greasyfork.org/zh-CN/scripts/538031-b%E7%AB%99-bilibili-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9-%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88-bilihealth-scan)
+3. 点击"安装"将脚本添加到浏览器
+
+### 评分系统
+综合评分使用以下权重计算：
+- 点赞率权重：1.5
+- 投币率权重：4.0
+- 收藏率权重：3.0
+- 转发率权重：2.0
+
+评分等级：
+- 🌈 满分神作（≥100%）
+- 🔥 好评如潮（95-99%）
+- ⭐ 非常好评（80-94%）
+- 👍 多半好评（70-79%）
+- 🤔 褒贬不一（40-69%）
+- 😐 多半差评（20-39%）
+- ❌ 差评如潮（<20%）
+
+### 项目指标
+
+<div align="center">
+  <img src="https://star-history.com/ch777777/BiliHealth-Scan.svg" alt="Star History Chart">
+</div>
+
+| 指标 | 数值 | 趋势 |
+|------|------|------|
+| GitHub Stars | ![GitHub Stars](https://img.shields.io/github/stars/ch777777/BiliHealth-Scan?style=social) | 📈 |
+| Greasy Fork 安装量 | ![Greasy Fork Installs](https://img.shields.io/greasyfork/dt/538031) | 📈 |
+| 当前版本 | ![Version](https://img.shields.io/greasyfork/v/538031) | 🔄 |
+| 开源协议 | ![License](https://img.shields.io/github/license/ch777777/BiliHealth-Scan) | 📄 |
+
+### 免责声明
+本脚本所有数据均来自B站公开信息，评分算法基于统计学模型，不能完全代表视频质量。用户应结合自身判断使用，开发者不对评分结果承担任何责任。
+
+## Links
+- [Greasy Fork](https://greasyfork.org/zh-CN/scripts/538031-b%E7%AB%99-bilibili-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9-%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88-bilihealth-scan)
+- [GitHub Repository](https://github.com/ch777777/BiliHealth-Scan)
+
 # 权重计算逻辑
 
-在“一键三连健康探针”脚本中，我们使用一套加权计算方法来评估视频的互动率，并将其转化为好评率。
+在"一键三连健康探针"脚本中，我们使用一套加权计算方法来评估视频的互动率，并将其转化为好评率。
 
 ## 互动数据标准化
 
@@ -49,7 +173,7 @@ const INTERACTION_WEIGHTS = {
 };
 ```
 
-根据这些权重，投币和分享在计算时对总分的影响比点赞和收藏更大。计算出的加权互动总和除以播放量，再乘以 100 得到百分比，最后乘以 3 得到一个基础的“权重互动比率”。
+根据这些权重，投币和分享在计算时对总分的影响比点赞和收藏更大。计算出的加权互动总和除以播放量，再乘以 100 得到百分比，最后乘以 3 得到一个基础的"权重互动比率"。
 
 ## 播放量分级与好评率上限
 
@@ -92,7 +216,7 @@ for (const threshold of VIEW_THRESHOLDS) {
 
 对于播放量高于 50 万的视频，将不受这些上限的限制，使用原始计算结果进行后续处理。
 
-这些逻辑共同构成了脚本评估视频“健康度”的基础。
+这些逻辑共同构成了脚本评估视频"健康度"的基础。
 
 ---
 
@@ -203,11 +327,11 @@ These logic components collectively form the basis for how the script evaluates 
 ```markdown
 # 评级与颜色逻辑
 
-“一键三连健康探针”脚本根据计算出的好评率，将其映射到不同的评级文本和颜色，以提供直观的视觉反馈。
+"一键三连健康探针"脚本根据计算出的好评率，将其映射到不同的评级文本和颜色，以提供直观的视觉反馈。
 
 ## 显示好评率计算 (`getDisplayRatio`)
 
-如[权重计算逻辑](weight_calculation.md)中所述，`getDisplayRatio` 函数首先计算基础的加权互动比率，并根据播放量应用上限。在此之后，它还会应用两个重要的逻辑来确定最终显示的“好评率”字符串：
+如[权重计算逻辑](weight_calculation.md)中所述，`getDisplayRatio` 函数首先计算基础的加权互动比率，并根据播放量应用上限。在此之后，它还会应用两个重要的逻辑来确定最终显示的"好评率"字符串：
 
 1.  **70% 以上压缩：** 如果应用了播放量上限后的 `currentRatio` 大于等于 70，脚本会应用一个压缩公式：
     ```javascript
@@ -225,7 +349,7 @@ These logic components collectively form the basis for how the script evaluates 
 
 ## 评级文本与颜色映射 (`getRating`)
 
-`getRating` 函数接收 `getDisplayRatio` 返回的字符串，并将其映射到具体的评级文本（如“好评如潮”）以及对应的 CSS 类名。
+`getRating` 函数接收 `getDisplayRatio` 返回的字符串，并将其映射到具体的评级文本（如"好评如潮"）以及对应的 CSS 类名。
 
 ```javascript
 getRating(displayRatio) {
@@ -620,7 +744,7 @@ Since the search page card structure is similar to the homepage, the UI injectio
 5.  计算各项比率、好评率和评级。
 6.  创建用于展示各项比率、综合评级和好评率的独立 `div` 元素。
 7.  使用 `MutationObserver` 监听工具栏元素的出现，并在工具栏准备就绪后将创建的 `div` 元素插入到对应的位置（如点赞、投币、收藏、分享按钮旁边，以及工具栏左侧）。
-8.  添加“复制评级”按钮功能。
+8.  添加"复制评级"按钮功能。
 9.  监听视频的 BVID 变化（例如在播放列表切换视频时），并在 BVID 变化时更新显示的评级信息。
 
 ## 数据获取
@@ -644,7 +768,7 @@ const videoStatData = unsafeWindow.__INITIAL_STATE__.videoData.stat;
 
 ## 复制评级功能
 
-“复制评级”按钮点击后，会使用 `navigator.clipboard.writeText` 将 `BiliRating.getPlainText()` 函数生成的纯文本评级描述复制到用户的剪贴板。
+"复制评级"按钮点击后，会使用 `navigator.clipboard.writeText` 将 `BiliRating.getPlainText()` 函数生成的纯文本评级描述复制到用户的剪贴板。
 
 ## 动态更新
 
@@ -709,7 +833,7 @@ Due to the unique structure and data source of the video detail page, its adapta
 ```markdown
 # 动态内容与事件处理
 
-Bilibili 网站大量使用懒加载（Lazy Loading）和动态内容更新（通过 AJAX 或其他 JavaScript 操作）。为了确保“一键三连健康探针”脚本能够处理这些动态加载的视频卡片，脚本在各种页面适配逻辑中都包含了事件监听和 DOM 变化观察机制。
+Bilibili 网站大量使用懒加载（Lazy Loading）和动态内容更新（通过 AJAX 或其他 JavaScript 操作）。为了确保"一键三连健康探针"脚本能够处理这些动态加载的视频卡片，脚本在各种页面适配逻辑中都包含了事件监听和 DOM 变化观察机制。
 
 ## MutationObserver
 
