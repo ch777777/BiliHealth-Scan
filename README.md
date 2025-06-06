@@ -976,6 +976,5 @@ These mechanisms collectively ensure that the script reliably works on Bilibili 
 
 ---
 
-请将这些内容复制粘贴到对应的 Markdown 文件中，并根据您的实际 GitHub 仓库和 Greasyfork 脚本地址替换占位符 `[您的 GitHub 仓库地址 Placeholder]` 和 `[您的 Greasyfork 脚本地址 Placeholder]`。
 
 这样您的项目文档就有了清晰的结构和详细的技术说明，便于其他用户和贡献者理解。
