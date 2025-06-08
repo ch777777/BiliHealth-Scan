@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.8.6
+// @version      1.8.7
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -169,11 +169,9 @@
         getDisplayRatio(data) {
             const ratio = parseFloat(this.calculateWeightedRatio(data));
 
-            // 定义播放量阈值和对应的最大好评率上限（1.8.6版本更正）
+            // 定义播放量阈值和对应的最大好评率上限（1.8.7版本更正）
             const VIEW_THRESHOLDS = [
-                { view: 50000, maxRatio: 75.99},   // <= 5万播放量，好评率不能成功76%
-                { view: 350000, maxRatio: 90.99 },  // <= 35万播放量，好评率不能成功91%
-                { view: 500000, maxRatio: 96.99 }   // <= 50万播放量，好评率不能成功97%
+                { view: 100000, maxRatio: 93.99},   // <= 5万播放量，好评率不能成功94%
             ];
 
             let currentRatio = ratio;
