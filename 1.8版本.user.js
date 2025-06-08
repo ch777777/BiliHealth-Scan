@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.8.7
+// @version      1.8.4
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -19,7 +19,7 @@
 // @run-at       document-start
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
-
+ 
 (function () {
     // ====== 常量与样式区======
     // 评级颜色配置
@@ -32,7 +32,7 @@
         limegreen: 'limegreen-text',
         yellowgreen: 'yellowgreen-text',
     };
-
+ 
     // 评级文本配置
     const RATING_TEXTS = [
         { min: 100, text: '满分神作', color: RATING_COLORS.rainbow },
@@ -43,7 +43,7 @@
         { min: 20, text: '多半差评', color: RATING_COLORS.limegreen },
         { min: 0, text: '差评如潮', color: RATING_COLORS.yellowgreen },
     ];
-
+ 
     // ====== 卡片样式======
     GM.addStyle(`
         /* 评级文本颜色 */
@@ -107,7 +107,7 @@
             font-size: inherit;
         }
     `);
-
+ 
     // ====== 页面类型判断 ======
     function getCurrentPageType() {
         if (location.pathname === '/') {
@@ -131,16 +131,16 @@
         }
         return 'unknown';
     }
-
+ 
     // ====== 统一数据处理与API请求（1.8核心） ======
     // 权重配置
     const INTERACTION_WEIGHTS = {
         like: 1,
-        coin: 8,
-        favorite: 4,
-        share: 6,
+        coin: 2.5,
+        favorite: 1.5,
+        share: 2,
     };
-
+ 
     // 评级算法与数据处理
     const BiliRating = {
         WEIGHTS: INTERACTION_WEIGHTS,
@@ -168,17 +168,18 @@
         // 获取显示用好评率
         getDisplayRatio(data) {
             const ratio = parseFloat(this.calculateWeightedRatio(data));
-
-            // 定义播放量阈值和对应的最大好评率上限（1.8.7版本更正）
+ 
+            // 定义播放量阈值和对应的最大好评率上限
             const VIEW_THRESHOLDS = [
-                { view: 100000, maxRatio: 93.99},   // <= 5万播放量，好评率不能成功94%
+                { view: 6000, maxRatio: 84.99 },    // <= 6千播放量，好评率不能成功85%
+                { view: 50000, maxRatio: 93.99 },   // <= 5万播放量，好评率不能成功94%
             ];
-
+ 
             let currentRatio = ratio;
-
-            // 对于播放量小于2500的视频，直接返回0（1.8.6版本更正）
-            if (data.view < 2500) return "0.00";
-
+ 
+            // 对于播放量小于3000的视频，直接返回0
+            if (data.view < 3000) return "0.00";
+ 
             // 根据播放量应用好评率上限
             for (const threshold of VIEW_THRESHOLDS) {
                 if (data.view <= threshold.view) {
@@ -187,18 +188,18 @@
                     break; // 找到匹配的最低阈值后停止
                 }
             }
-
+ 
             let displayRatioValue = currentRatio; // 使用应用上限后的比率进行后续计算
-
-            // 应用原有的70%以上压缩逻辑（在应用播放量上限后）（1.8.6版本更正）
+ 
+            // 应用原有的70%以上压缩逻辑（在应用播放量上限后）
             if (displayRatioValue >= 70) {
-                displayRatioValue = (90 + (displayRatioValue - 50) * (10 / (200 - 100)));
+                displayRatioValue = (90 + (displayRatioValue - 50) * (10 / (200 - 150)));
                 //console.log(`[BiliHealth Scan] Ratio >= 70, applied compression. New ratio: ${displayRatioValue.toFixed(2)}`); // Debugging log
             }
-
+ 
             // 将数值结果转换为字符串，保留两位小数
             let displayRatioString = displayRatioValue.toFixed(2);
-
+ 
             // 应用原有的特殊判定逻辑（满分神作、刷到必看等）
             if (data.view >= 20000000) {
                 return "小破站必刷";
@@ -223,7 +224,7 @@
                     return "100.00";
                 }
             }
-
+ 
             return displayRatioString;
         },
         // 获取评级
@@ -288,7 +289,7 @@
             }
         }
     };
-
+ 
     // ====== API数据请求======
     const statCache = new Map();
     async function fetchFullStats(bvid) {
@@ -307,7 +308,7 @@
         }
         return null;
     }
-
+ 
     // ====== 卡片UI渲染======
     const BiliRatingUI = {
         // 主页卡片渲染 (恢复简单附加到末尾，保留样式自适应)
@@ -330,7 +331,7 @@
                 const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)'); 
                 const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
                 const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px'; 
-
+ 
                 span.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
                         height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
@@ -357,12 +358,12 @@
                 span.className = 'bili-health-rating-span';
                 const ratingInfo = BiliRating.getFullRatingInfo(stat);
                 const { displayRatio, rating } = ratingInfo;
-
+ 
                 // Get size reference from existing stat elements within THIS container
                 const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)'); 
                 const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
                 const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px'; 
-
+ 
                 span.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
                         height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
@@ -500,7 +501,7 @@
             });
         }
     };
-
+ 
     // ====== 主逻辑入口======
     const pageType = getCurrentPageType();
     const pageLogicMap = {
@@ -517,12 +518,12 @@
     if (pageLogicMap[pageType]) {
         pageLogicMap[pageType]();
     }
-
+ 
     // 主页卡片处理
     function mainPageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
             const processedCards = new Set(); // 用于追踪已处理的卡片
-
+ 
             function handleCards() {
                 const cards = Array.from(document.querySelectorAll('div.bili-video-card'));
                 const bvidMap = new Map();
@@ -542,7 +543,7 @@
                     bvidMap.set(bvid, card);
                     processedCards.add(card);
                 });
-
+ 
                 // 一次性处理所有BVID
                 if (bvidMap.size > 0) {
                     Promise.all(Array.from(bvidMap.keys()).map(bvid => 
@@ -559,10 +560,10 @@
                     });
                 }
             }
-
+ 
             // 初始处理
             handleCards();
-
+ 
             // 监听DOM变化
             const observer = new MutationObserver((mutations) => {
                 let shouldHandle = false;
@@ -580,16 +581,16 @@
                          shouldHandle = true;
                     }
                 });
-
+ 
                 if (shouldHandle) {
                     // 使用 setTimeout 微任务延迟处理，避免重复执行
                     setTimeout(handleCards, 0);
                 }
             });
-
+ 
             // 监听滚动事件 - 主要用于处理懒加载
              window.addEventListener('scroll', handleCards);
-
+ 
             // 初始观察整个body，包括懒加载内容
             observer.observe(document.body, {
                 childList: true,
@@ -598,14 +599,14 @@
             });
         });
     }
-
+ 
     // 视频页处理
     function videoPageLogic() {
         document.addEventListener('DOMContentLoaded', function () {
             BiliRatingUI.initVideoPageLogic();
         });
     }
-
+ 
     // 搜索页卡片处理
     function searchPageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
@@ -613,10 +614,10 @@
             function handleCards() {
                 const cards = Array.from(document.querySelectorAll('div.bili-video-card'));
                  const bvidMap = new Map();
-
+ 
                 cards.forEach(card => {
                     if (processedCards.has(card)) return;
-
+ 
                     // 注意：搜索页卡片的链接选择器可能是 a 或 .bili-video-card__image--link
                     const linkElement = card.querySelector('a, .bili-video-card__image--link');
                     const link = linkElement?.href;
@@ -653,53 +654,53 @@
              window.addEventListener('scroll', handleCards);
         });
     }
-
+ 
     // 分区页卡片处理
     function regionPageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
             console.log("[BiliHealth Scan] regionPageLogic initialized.");
             const processedCards = new Set(); // 用于追踪已处理的卡片
-
+ 
             function handleCards() {
                 console.log("[BiliHealth Scan] Running handleCards on region page.");
                 // 使用分区页卡片的类名
                 const cards = Array.from(document.querySelectorAll('.bili-cover-card'));
                 console.log(`[BiliHealth Scan] Found ${cards.length} video cards.`);
-
+ 
                 cards.forEach(card => {
                     // 检查卡片是否已处理
                     if (processedCards.has(card)) {
                         return;
                     }
-
+ 
                     // 从卡片中查找链接以提取BVID
                     const link = card.href; // 卡片本身就是链接元素
                     const match = link && /bv\w{10}/i.exec(link);
-
+ 
                     if (match && match[0]) {
                     const bvid = match[0];
                         console.log(`[BiliHealth Scan] Found card with BVID: ${bvid}`);
                         processedCards.add(card); // 立即标记为处理中
-
+ 
                         // 异步获取统计数据并显示评分
                         fetchFullStats(bvid).then(stat => {
                             if (stat) {
                                 console.log(`[BiliHealth Scan] Got stats for ${bvid}, calculating rating...`);
                                 const ratingInfo = BiliRating.getFullRatingInfo(stat);
                                 const { displayRatio, rating } = ratingInfo;
-
+ 
                                 // 创建评分元素
                                 const ratingSpan = document.createElement('span');
                                 ratingSpan.className = 'bili-health-rating-span';
                                 console.log("[BiliHealth Scan] Creating rating span...");
-
+ 
                                 // 获取现有统计元素的大小参考
                                 const statsArea = card.querySelector('.bili-cover-card__stats');
                                 if (statsArea) {
                                     const existingStat = statsArea.querySelector('span:not(.bili-health-rating-span)');
                                     const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
                                     const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px';
-
+ 
                                     // 填充评分内容
                                     ratingSpan.innerHTML = `
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
@@ -708,11 +709,11 @@
                                             </svg>
                                             <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>
                                         `;
-
+ 
                                     // 获取所有统计元素
                                     const statElements = Array.from(statsArea.querySelectorAll('.bili-cover-card__stat'));
                                     console.log(`[BiliHealth Scan] Found ${statElements.length} stats within container for ${bvid}.`);
-
+ 
                                     // 根据统计元素数量决定插入位置
                                     if (statElements.length >= 2) {
                                         console.log(`[BiliHealth Scan] Inserting rating after second stat for ${bvid}.`);
@@ -723,7 +724,7 @@
                                         // 如果统计值少于2个,追加到末尾
                                         statsArea.appendChild(ratingSpan);
                                     }
-
+ 
                                     console.log(`[BiliHealth Scan] Successfully added rating to card ${bvid}`, { displayRatio, ratingText: rating.text });
                                 } else {
                                     console.warn(`[BiliHealth Scan] Could not find stats area for card ${bvid}`);
@@ -741,10 +742,10 @@
                         });
                 console.log(`[BiliHealth Scan] Video card processing loop finished.`);
                 }
-
+ 
             // 初始处理
             handleCards();
-
+ 
             // 监听DOM变化
             const observer = new MutationObserver((mutations) => {
                 let shouldHandle = false;
@@ -766,13 +767,13 @@
                      // if (mutation.type === 'attributes' && ...) { ... }
                      if(shouldHandle) break; // 如果 shouldHandle 已经为 true，无需检查更多变化
                     }
-
+ 
                 if (shouldHandle) {
                      console.log("[BiliHealth Scan] 由于 DOM 变化触发 handleCards");
                     setTimeout(handleCards, 50); // 使用小延迟
                 }
             });
-
+ 
             // 监听滚动事件 - 主要用于懒加载
             let scrollTimer = null; // 使用本地计时器变量
             window.addEventListener('scroll', () => {
@@ -783,42 +784,42 @@
                      handleCards();
                  }, 100); // 根据需要调整延迟时间
             });
-
+ 
             // 开始观察 body 的变化
             observer.observe(document.body, {
                 childList: true, // 观察子节点的添加或删除
                 subtree: true,   // 观察所有后代节点
                 // attributes: true // 如果需要可以重新启用，但 childList+subtree 通常足够用于新元素
             });
-
+ 
         });
     }
-
+ 
      // 空间主页卡片处理
     function spacePageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
             console.log("[BiliHealth Scan] 初始化空间页面逻辑");
             const processedStatsContainers = new Set(); // 用于追踪已处理的统计容器
-
+ 
             function handleCards() {
                 console.log("[BiliHealth Scan] 在空间页面运行 handleCards");
                 // 首先查找所有潜在的统计容器，因为它们是一个一致的标记
                 // 基于之前尝试和常见模式扩展选择器
                 const statsContainers = Array.from(document.querySelectorAll('.bili-video-card__stats--left, .bili-cover-card__stats, .info .watch-info, .stat, .card-item .count, .info, .meta, .metrics, .count-info, .number, .info-count')); 
                 console.log(`[BiliHealth Scan] 找到 ${statsContainers.length} 个潜在统计容器`);
-
+ 
                 statsContainers.forEach(statsContainer => {
                     // 检查此统计容器是否已处理
                     if (processedStatsContainers.has(statsContainer)) {
                         return;
                     }
-
+ 
                     // 查找包含 BVID 的父链接元素
                     // 从统计容器向上遍历 DOM 树以找到相关链接
                     let currentElement = statsContainer;
                     let linkElement = null;
                     let bvid = null;
-
+ 
                     while (currentElement && currentElement !== document.body) {
                         // 检查当前元素是否是带有 BVID 的链接
                         if (currentElement.tagName === 'A') {
@@ -830,7 +831,7 @@
                                 break; // 找到链接和 BVID，停止向上搜索
                             }
                         }
-
+ 
                         // 同时检查当前元素内的链接（同级或附近父元素中的嵌套）
                         const nestedLink = currentElement.querySelector('a[href*="/video/BV"], a[data-aid], a[data-bvid]'); // 添加更多链接模式
                          if(nestedLink) { // 如果找到嵌套链接，检查其 href/data 属性
@@ -842,17 +843,17 @@
                                    break; // 找到链接和 BVID，停止向上搜索
                               }
                          }
-
+ 
                         currentElement = currentElement.parentElement;
                     }
-
+ 
                     if (!bvid) {
                         // 无法为此统计容器找到相关的 BVID 链接
                          // console.log("[BiliHealth Scan] 无法为统计容器找到 BVID:", statsContainer); // 过于冗长
                         processedStatsContainers.add(statsContainer); // 标记为已处理以避免重新检查
                         return;
                     }
-
+ 
                     // 检查此统计容器中是否已存在评分元素
                     if (statsContainer.querySelector('.bili-health-rating-span')) {
                          // console.log(`[BiliHealth Scan] 统计容器中已存在 ${bvid} 的评分，跳过`); // 过于冗长
@@ -862,14 +863,14 @@
                     
                     console.log(`[BiliHealth Scan] 找到统计容器和 BVID ${bvid}，获取统计信息...`);
                     processedStatsContainers.add(statsContainer); // 立即标记为处理中
-
+ 
                     // 异步获取统计信息并注入
                     fetchFullStats(bvid).then(stat => {
                         if (!stat) {
                             console.warn(`[BiliHealth Scan] 未返回 ${bvid} 的统计信息`);
                             return;
                         }
-
+ 
                         console.log(`[BiliHealth Scan] 获取到 ${bvid} 的统计信息，注入评分`);
                         const span = document.createElement('span');
                         span.className = 'bili-health-rating-span';
@@ -909,16 +910,16 @@
                             statsContainer.appendChild(span);
                         }
                         console.log(`[BiliHealth Scan] 成功为 ${bvid} 注入评分`);
-
+ 
                     }).catch(error => {
                          console.error(`[BiliHealth Scan] 获取统计信息或注入评分时出错 ${bvid}:`, error);
                     });
                 });
             }
-
+ 
             // 初始处理
             handleCards();
-
+ 
             // 在 body 上使用单个 MutationObserver
             const observer = new MutationObserver((mutations) => {
                 let shouldHandle = false;
@@ -942,13 +943,13 @@
                      // if (mutation.type === 'attributes' && ...) { ... }
                      if(shouldHandle) break; // 如果 shouldHandle 已经为 true，无需检查更多变化
                     }
-
+ 
                 if (shouldHandle) {
                      console.log("[BiliHealth Scan] 由于 DOM 变化触发 handleCards");
                     setTimeout(handleCards, 50); // 使用小延迟
                 }
             });
-
+ 
             // 监听滚动事件 - 主要用于懒加载
             let scrollTimer = null; // 使用本地计时器变量
             window.addEventListener('scroll', () => {
@@ -959,15 +960,15 @@
                      handleCards();
                  }, 100); // 根据需要调整延迟时间
             });
-
+ 
             // 开始观察 body 的变化
             observer.observe(document.body, {
                 childList: true, // 观察子节点的添加或删除
                 subtree: true,   // 观察所有后代节点
                 // attributes: true // 如果需要可以重新启用，但 childList+subtree 通常足够用于新元素
             });
-
+ 
         });
     }
-
+ 
 })(); 
