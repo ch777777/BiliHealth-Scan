@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.8.5
+// @version      1.8.6
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -169,17 +169,17 @@
         getDisplayRatio(data) {
             const ratio = parseFloat(this.calculateWeightedRatio(data));
 
-            // 定义播放量阈值和对应的最大好评率上限
+            // 定义播放量阈值和对应的最大好评率上限（1.8.6版本更正）
             const VIEW_THRESHOLDS = [
-                { view: 50000, maxRatio: 85.99 },   // <= 5万播放量，好评率不能成功86%
+                { view: 50000, maxRatio: 75.99},   // <= 5万播放量，好评率不能成功76%
                 { view: 350000, maxRatio: 90.99 },  // <= 35万播放量，好评率不能成功91%
                 { view: 500000, maxRatio: 96.99 }   // <= 50万播放量，好评率不能成功97%
             ];
 
             let currentRatio = ratio;
 
-            // 对于播放量小于1000的视频，直接返回0
-            if (data.view < 1000) return "0.00";
+            // 对于播放量小于2500的视频，直接返回0（1.8.6版本更正）
+            if (data.view < 2500) return "0.00";
 
             // 根据播放量应用好评率上限
             for (const threshold of VIEW_THRESHOLDS) {
@@ -192,9 +192,9 @@
 
             let displayRatioValue = currentRatio; // 使用应用上限后的比率进行后续计算
 
-            // 应用原有的70%以上压缩逻辑（在应用播放量上限后）
+            // 应用原有的70%以上压缩逻辑（在应用播放量上限后）（1.8.6版本更正）
             if (displayRatioValue >= 70) {
-                displayRatioValue = (90 + (displayRatioValue - 50) * (10 / (200 - 150)));
+                displayRatioValue = (90 + (displayRatioValue - 50) * (10 / (200 - 100)));
                 //console.log(`[BiliHealth Scan] Ratio >= 70, applied compression. New ratio: ${displayRatioValue.toFixed(2)}`); // Debugging log
             }
 
