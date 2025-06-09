@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.8.4
+// @version      1.8.7.1
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -18,6 +18,8 @@
 // @grant        unsafeWindow
 // @run-at       document-start
 // @grant        GM_registerMenuCommand
+// @downloadURL https://update.greasyfork.org/scripts/538031/b%E7%AB%99%20%7C%20bilibili%20%7C%20%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%20%7C%20%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88%EF%BC%88BiliHealth%20Scan%EF%BC%89.user.js
+// @updateURL https://update.greasyfork.org/scripts/538031/b%E7%AB%99%20%7C%20bilibili%20%7C%20%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%20%7C%20%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88%EF%BC%88BiliHealth%20Scan%EF%BC%89.meta.js
 // ==/UserScript==
  
 (function () {
