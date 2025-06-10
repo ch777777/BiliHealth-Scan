@@ -2,16 +2,17 @@
 
 [English](#english) | [中文](#chinese)
 
-<div align="center">
-  <img src="https://img.shields.io/github/stars/ch777777/BiliHealth-Scan?style=social" alt="GitHub Stars">
-  <img src="https://img.shields.io/github/forks/ch777777/BiliHealth-Scan?style=social" alt="GitHub Forks">
-  <img src="https://img.shields.io/github/license/ch777777/BiliHealth-Scan" alt="License">
-  <img src="https://img.shields.io/greasyfork/dt/538031" alt="Greasy Fork Downloads">
-  <img src="https://img.shields.io/greasyfork/v/538031" alt="Version">
-</div>
 
 <div align="center">
   <img src="https://greasyfork.org/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTc5MDI3LCJwdXIiOiJibG9iX2lkIn19--d965996e4cbdc652b72783e7abb835fe5a3ca0b2/%E6%88%AA%E5%9B%BE_2025-06-02_09-56-43.png?locale=zh-CN" alt="BiliHealth Scan Logo">
+</div>
+
+<div align="center">
+  <img src="https://img.shields.io/github/stars/xiangye277/BiliHealth-Scan?style=social" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/forks/xiangye277/BiliHealth-Scan?style=social" alt="GitHub Forks">
+  <img src="https://img.shields.io/github/license/xiangye277/BiliHealth-Scan" alt="License">
+  <img src="https://img.shields.io/greasyfork/dt/538031" alt="Greasy Fork Downloads">
+  <img src="https://img.shields.io/greasyfork/v/538031" alt="Version">
 </div>
 
 <div align="center">
@@ -56,15 +57,15 @@ Rating Levels:
 ### Project Metrics
 
 <div align="center">
-  <img src="https://star-history.com/ch777777/BiliHealth-Scan.svg" alt="Star History Chart">
+  <img src="https://star-history.com/xiangye277/BiliHealth-Scan.svg" alt="Star History Chart">
 </div>
 
 | Metric | Value | Trend |
 |--------|-------|--------|
-| GitHub Stars | ![GitHub Stars](https://img.shields.io/github/stars/ch777777/BiliHealth-Scan?style=social) | 📈 |
+| GitHub Stars | ![GitHub Stars](https://img.shields.io/github/stars/xiangye277/BiliHealth-Scan?style=social) | 📈 |
 | Greasy Fork Installs | ![Greasy Fork Installs](https://img.shields.io/greasyfork/dt/538031) | 📈 |
 | Current Version | ![Version](https://img.shields.io/greasyfork/v/538031) | 🔄 |
-| License | ![License](https://img.shields.io/github/license/ch777777/BiliHealth-Scan) | 📄 |
+| License | ![License](https://img.shields.io/github/license/xiangye277/BiliHealth-Scan) | 📄 |
 
 ### Disclaimer
 All data comes from publicly available Bilibili information. The rating algorithm is based on statistical models and may not fully represent video quality. Users should use their own judgment when interpreting ratings.
@@ -109,15 +110,15 @@ All data comes from publicly available Bilibili information. The rating algorith
 ### 项目指标
 
 <div align="center">
-  <img src="https://star-history.com/ch777777/BiliHealth-Scan.svg" alt="Star History Chart">
+  <img src="https://star-history.com/xiangye277/BiliHealth-Scan.svg" alt="Star History Chart">
 </div>
 
 | 指标 | 数值 | 趋势 |
 |------|------|------|
-| GitHub Stars | ![GitHub Stars](https://img.shields.io/github/stars/ch777777/BiliHealth-Scan?style=social) | 📈 |
+| GitHub Stars | ![GitHub Stars](https://img.shields.io/github/stars/xiangye277/BiliHealth-Scan?style=social) | 📈 |
 | Greasy Fork 安装量 | ![Greasy Fork Installs](https://img.shields.io/greasyfork/dt/538031) | 📈 |
 | 当前版本 | ![Version](https://img.shields.io/greasyfork/v/538031) | 🔄 |
-| 开源协议 | ![License](https://img.shields.io/github/license/ch777777/BiliHealth-Scan) | 📄 |
+| 开源协议 | ![License](https://img.shields.io/github/license/xiangye277/BiliHealth-Scan) | 📄 |
 
 ### 免责声明
 本脚本所有数据均来自B站公开信息，评分算法基于统计学模型，不能完全代表视频质量。用户应结合自身判断使用，开发者不对评分结果承担任何责任。
@@ -975,5 +976,57 @@ To prevent injecting ratings into the same video card or stats container multipl
 These mechanisms collectively ensure that the script reliably works on Bilibili pages with dynamically loaded content.
 
 ---
+
+## 🆕 1.9 版本更新说明
+
+### 核心优化
+
+- **全站字体风格统一**  
+主页卡片、分区卡片、空间主页卡片、搜索页卡片、视频详情页等所有统计与评级区域，字体全部统一为 B 站主站同款无衬线字体族（`-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif`），视觉风格高度一致。
+- 所有评级、统计、好评率等区域字体**不再加粗**，权重统一为 `font-weight: 400`（视频详情页为 500），字号、行高等自适应，兼容多分辨率。
+
+- **视频详情页样式增强**  
+详情页所有自定义展示区（综合评级、好评率、各项比率、复制按钮等）字体族、字号、字重、行高全部与主站一致，细节高度还原官方风格。
+- 解决了部分区域字体不一致、加粗、字号不统一等问题。
+
+- **自适应与兼容性提升**  
+统计信息、好评率、评级标签等在不同页面、不同卡片、不同分辨率下均能自适应字体大小和风格。
+- 彻底消除因原生样式或浏览器默认字体导致的视觉割裂。
+
+### 其它改进
+- 代码结构优化，样式注入更集中、易维护。
+- 细化了 MutationObserver 监听，确保动态加载内容也能正确应用新样式。
+- 细节体验提升，评分展示更美观、专业。
+
+---
+
+### 更新方式
+只需覆盖安装新版脚本，即可体验全新统一的视觉风格和更佳的适配体验。
+
+## 🆕 Version 1.9 Changelog (English)
+
+### Core Improvements
+
+- **Unified Font Style Across All Pages**  
+  All rating/statistics areas on homepage cards, region cards, space cards, search cards, and video detail pages now use the same Bilibili main site sans-serif font family (`-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif`) for a highly consistent look.
+- All rating/statistics/good rate areas are **no longer bold**; font-weight is unified to `400` (video detail page uses `500`), with adaptive font size and line height for all resolutions.
+
+- **Enhanced Video Detail Page Styles**  
+  All custom display areas (comprehensive rating, good rate, individual ratios, copy button, etc.) on the detail page now fully match the main site's font family, size, weight, and line height for a highly professional appearance.
+- Fixed issues with inconsistent fonts, boldness, and font sizes in some areas.
+
+- **Better Adaptivity & Compatibility**  
+  All statistics, good rate, and rating tags now adapt their font size and style across different pages, cards, and resolutions.
+- Eliminated visual fragmentation caused by native styles or browser default fonts.
+
+### Other Improvements
+- Refactored code structure for more centralized and maintainable style injection.
+- Improved MutationObserver logic to ensure new dynamic content always gets the correct styles.
+- Enhanced visual details for a more professional and beautiful rating display.
+
+---
+
+### How to Update
+Simply overwrite your old script with the new version to enjoy the unified visual style and improved compatibility.
 
 
