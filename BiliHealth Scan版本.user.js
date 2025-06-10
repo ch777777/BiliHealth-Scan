@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.8.7.1
+// @version      1.9
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -21,7 +21,7 @@
 // @downloadURL https://update.greasyfork.org/scripts/538031/b%E7%AB%99%20%7C%20bilibili%20%7C%20%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%20%7C%20%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88%EF%BC%88BiliHealth%20Scan%EF%BC%89.user.js
 // @updateURL https://update.greasyfork.org/scripts/538031/b%E7%AB%99%20%7C%20bilibili%20%7C%20%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9%20%7C%20%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88%EF%BC%88BiliHealth%20Scan%EF%BC%89.meta.js
 // ==/UserScript==
- 
+
 (function () {
     // ====== 常量与样式区======
     // 评级颜色配置
@@ -34,7 +34,7 @@
         limegreen: 'limegreen-text',
         yellowgreen: 'yellowgreen-text',
     };
- 
+
     // 评级文本配置
     const RATING_TEXTS = [
         { min: 100, text: '满分神作', color: RATING_COLORS.rainbow },
@@ -45,7 +45,7 @@
         { min: 20, text: '多半差评', color: RATING_COLORS.limegreen },
         { min: 0, text: '差评如潮', color: RATING_COLORS.yellowgreen },
     ];
- 
+
     // ====== 卡片样式======
     GM.addStyle(`
         /* 评级文本颜色 */
@@ -83,17 +83,15 @@
         .bili-health-rating-span {
             font-weight: bold;
             margin-left: 6px;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+    font-weight: 400 !important;
         }
         /* 空间主页卡片好评率样式 */
         .bili-video-card__info {
             position: relative; /* 确保子元素可以绝对定位 */
-        }
-        .bili-health-rating-span {
-            font-weight: bold;
-            z-index: 10;
-            display: inline-flex;
-            align-items: center;
-            margin-left: 6px;
         }
         /* 调整统计数据的布局，避免重叠 */
         .bili-cover-card__stats {
@@ -107,9 +105,16 @@
         .bili-health-rating-span span {
             -webkit-text-fill-color: unset;
             font-size: inherit;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+    font-weight: 400 !important;
+        }
+        /* 统一主字体为B站主站风格（兜底） */
+        .bili-health-rating-span,
+        .bili-health-rating-span span {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
         }
     `);
- 
+
     // ====== 页面类型判断 ======
     function getCurrentPageType() {
         if (location.pathname === '/') {
@@ -133,7 +138,7 @@
         }
         return 'unknown';
     }
- 
+
     // ====== 统一数据处理与API请求（1.8核心） ======
     // 权重配置
     const INTERACTION_WEIGHTS = {
@@ -142,7 +147,7 @@
         favorite: 1.5,
         share: 2,
     };
- 
+
     // 评级算法与数据处理
     const BiliRating = {
         WEIGHTS: INTERACTION_WEIGHTS,
@@ -170,18 +175,18 @@
         // 获取显示用好评率
         getDisplayRatio(data) {
             const ratio = parseFloat(this.calculateWeightedRatio(data));
- 
+
             // 定义播放量阈值和对应的最大好评率上限
             const VIEW_THRESHOLDS = [
                 { view: 6000, maxRatio: 84.99 },    // <= 6千播放量，好评率不能成功85%
                 { view: 50000, maxRatio: 93.99 },   // <= 5万播放量，好评率不能成功94%
             ];
- 
+
             let currentRatio = ratio;
- 
+
             // 对于播放量小于3000的视频，直接返回0
             if (data.view < 3000) return "0.00";
- 
+
             // 根据播放量应用好评率上限
             for (const threshold of VIEW_THRESHOLDS) {
                 if (data.view <= threshold.view) {
@@ -190,18 +195,18 @@
                     break; // 找到匹配的最低阈值后停止
                 }
             }
- 
+
             let displayRatioValue = currentRatio; // 使用应用上限后的比率进行后续计算
- 
+
             // 应用原有的70%以上压缩逻辑（在应用播放量上限后）
             if (displayRatioValue >= 70) {
                 displayRatioValue = (90 + (displayRatioValue - 50) * (10 / (200 - 150)));
                 //console.log(`[BiliHealth Scan] Ratio >= 70, applied compression. New ratio: ${displayRatioValue.toFixed(2)}`); // Debugging log
             }
- 
+
             // 将数值结果转换为字符串，保留两位小数
             let displayRatioString = displayRatioValue.toFixed(2);
- 
+
             // 应用原有的特殊判定逻辑（满分神作、刷到必看等）
             if (data.view >= 20000000) {
                 return "小破站必刷";
@@ -226,7 +231,7 @@
                     return "100.00";
                 }
             }
- 
+
             return displayRatioString;
         },
         // 获取评级
@@ -291,7 +296,7 @@
             }
         }
     };
- 
+
     // ====== API数据请求======
     const statCache = new Map();
     async function fetchFullStats(bvid) {
@@ -310,7 +315,7 @@
         }
         return null;
     }
- 
+
     // ====== 卡片UI渲染======
     const BiliRatingUI = {
         // 主页卡片渲染 (恢复简单附加到末尾，保留样式自适应)
@@ -328,19 +333,19 @@
                 span.className = 'bili-health-rating-span';
                 const ratingInfo = BiliRating.getFullRatingInfo(stat);
                 const { displayRatio, rating } = ratingInfo;
-                
+
                 // Get size reference from existing stat elements within THIS container
-                const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)'); 
+                const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)');
                 const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
-                const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px'; 
- 
+                const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px';
+
                 span.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
                         height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                         <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
                     </svg>
                     <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>`;
-                
+
                 // Simply append to the end
                 statsContainer.appendChild(span);
             }
@@ -360,19 +365,19 @@
                 span.className = 'bili-health-rating-span';
                 const ratingInfo = BiliRating.getFullRatingInfo(stat);
                 const { displayRatio, rating } = ratingInfo;
- 
+
                 // Get size reference from existing stat elements within THIS container
-                const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)'); 
+                const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)');
                 const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
-                const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px'; 
- 
+                const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px';
+
                 span.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
                         height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                         <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
                     </svg>
                     <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>`;
-                
+
                 // Simply append to the end
                 statsContainer.appendChild(span);
             }
@@ -389,13 +394,26 @@
                 .toolbar-left-item-wrap{ display:flex !important; margin-right: 12px !important; }
                 .video-share-info{ width:auto !important; max-width:90px; }
                 .video-share-info-text{ position: relative !important; }
-                .comprehensive-rating { display: flex; align-items: center; font-weight: bold; margin-left: 12px; }
-                .good-rate { display: flex; align-items: center; font-weight: bold; margin-left: 12px; color: #000000; }
-                .copy-rating { display: flex; align-items: center; margin-left: 12px; cursor: pointer; color: #00aeec; font-weight: bold; }
+                .comprehensive-rating { display: flex; align-items: center; margin-left: 12px; }
+                .good-rate { display: flex; align-items: center; margin-left: 12px; color: #000000; }
+                .copy-rating { display: flex; align-items: center; margin-left: 12px; cursor: pointer; color: #00aeec; }
                 .copy-rating:hover { color: #ff6699; }
                 .video-toolbar-item-icon { margin-right:6px !important; }
                 .toolbar-right-note{ margin-right:5px !important; }
                 .toolbar-right-ai{ margin-right:12px !important; }
+                /* 统一视频详情页字体样式 */
+                .comprehensive-rating,
+                .good-rate,
+                .copy-rating,
+                .video-toolbar-left-item,
+                .toolbar-left-item-wrap,
+                .video-share-info,
+                .video-share-info-text {
+                    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+                    font-weight: 500 !important;
+                    font-size: 13px !important;
+                    line-height: 28px !important;
+                }
             `);
             // 获取视频统计数据
             const videoStatData = unsafeWindow.__INITIAL_STATE__.videoData.stat;
@@ -408,10 +426,10 @@
                 div[e].style.setProperty('align-items', 'center');
                 const ratio = ratingInfo[e + 'Ratio'];
                 div[e].innerHTML = `
-                    <span style="margin-left: 5px;margin-right: 3px;font-size:medium;">≈</span>
-                    <span id="data" style="font-family: math;font-size: initial;color:${ratio.color};">${ratio.rate}</span>
-                    <span style="font-family: math;margin-left: 2px;"> %</span>
-                `;
+    <span style="margin-left: 5px;margin-right: 3px;font-size:13px;font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-weight: 500; line-height: 28px;">≈</span>
+    <span id="data" style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; color:${ratio.color};">${ratio.rate}</span>
+    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; margin-left: 2px;"> %</span>
+`;
             }
             // 综合评级展示
             const comprehensiveRating = document.createElement('div');
@@ -503,7 +521,7 @@
             });
         }
     };
- 
+
     // ====== 主逻辑入口======
     const pageType = getCurrentPageType();
     const pageLogicMap = {
@@ -520,35 +538,35 @@
     if (pageLogicMap[pageType]) {
         pageLogicMap[pageType]();
     }
- 
+
     // 主页卡片处理
     function mainPageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
             const processedCards = new Set(); // 用于追踪已处理的卡片
- 
+
             function handleCards() {
                 const cards = Array.from(document.querySelectorAll('div.bili-video-card'));
                 const bvidMap = new Map();
-                
+
                 // 收集所有需要处理的BVID
                 cards.forEach(card => {
                     // 检查卡片是否已处理
                     if (processedCards.has(card)) return;
-                    
+
                     // 注意：主页卡片的链接选择器是 .bili-video-card__image--link
                     const linkElement = card.querySelector('.bili-video-card__image--link');
                     const link = linkElement?.href;
                     const match = link && /bv\w{10}/i.exec(link);
                     if (!match) return;
-                    
+
                     const bvid = match[0];
                     bvidMap.set(bvid, card);
                     processedCards.add(card);
                 });
- 
+
                 // 一次性处理所有BVID
                 if (bvidMap.size > 0) {
-                    Promise.all(Array.from(bvidMap.keys()).map(bvid => 
+                    Promise.all(Array.from(bvidMap.keys()).map(bvid =>
                         fetchFullStats(bvid).then(stat => ({ bvid, stat }))
                     )).then(results => {
                         results.forEach(({ bvid, stat }) => {
@@ -562,19 +580,19 @@
                     });
                 }
             }
- 
+
             // 初始处理
             handleCards();
- 
+
             // 监听DOM变化
             const observer = new MutationObserver((mutations) => {
                 let shouldHandle = false;
-                
+
                 mutations.forEach(mutation => {
                     if (mutation.type === 'childList') {
                         mutation.addedNodes.forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE && 
-                                (node.classList.contains('bili-video-card') || 
+                            if (node.nodeType === Node.ELEMENT_NODE &&
+                                (node.classList.contains('bili-video-card') ||
                                  node.querySelector('.bili-video-card'))) { // 检查新增节点本身或其子节点是否包含视频卡片
                                 shouldHandle = true;
                             }
@@ -583,16 +601,16 @@
                          shouldHandle = true;
                     }
                 });
- 
+
                 if (shouldHandle) {
                     // 使用 setTimeout 微任务延迟处理，避免重复执行
                     setTimeout(handleCards, 0);
                 }
             });
- 
+
             // 监听滚动事件 - 主要用于处理懒加载
              window.addEventListener('scroll', handleCards);
- 
+
             // 初始观察整个body，包括懒加载内容
             observer.observe(document.body, {
                 childList: true,
@@ -601,14 +619,14 @@
             });
         });
     }
- 
+
     // 视频页处理
     function videoPageLogic() {
         document.addEventListener('DOMContentLoaded', function () {
             BiliRatingUI.initVideoPageLogic();
         });
     }
- 
+
     // 搜索页卡片处理
     function searchPageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
@@ -616,10 +634,10 @@
             function handleCards() {
                 const cards = Array.from(document.querySelectorAll('div.bili-video-card'));
                  const bvidMap = new Map();
- 
+
                 cards.forEach(card => {
                     if (processedCards.has(card)) return;
- 
+
                     // 注意：搜索页卡片的链接选择器可能是 a 或 .bili-video-card__image--link
                     const linkElement = card.querySelector('a, .bili-video-card__image--link');
                     const link = linkElement?.href;
@@ -630,7 +648,7 @@
                     processedCards.add(card);
                 });
                  if (bvidMap.size > 0) {
-                    Promise.all(Array.from(bvidMap.keys()).map(bvid => 
+                    Promise.all(Array.from(bvidMap.keys()).map(bvid =>
                         fetchFullStats(bvid).then(stat => ({ bvid, stat }))
                     )).then(results => {
                         results.forEach(({ bvid, stat }) => {
@@ -643,7 +661,7 @@
                         });
                     });
                 }
-            } 
+            }
             // 初始处理
             handleCards();
             // 监听DOM变化
@@ -656,53 +674,53 @@
              window.addEventListener('scroll', handleCards);
         });
     }
- 
+
     // 分区页卡片处理
     function regionPageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
             console.log("[BiliHealth Scan] regionPageLogic initialized.");
             const processedCards = new Set(); // 用于追踪已处理的卡片
- 
+
             function handleCards() {
                 console.log("[BiliHealth Scan] Running handleCards on region page.");
                 // 使用分区页卡片的类名
                 const cards = Array.from(document.querySelectorAll('.bili-cover-card'));
                 console.log(`[BiliHealth Scan] Found ${cards.length} video cards.`);
- 
+
                 cards.forEach(card => {
                     // 检查卡片是否已处理
                     if (processedCards.has(card)) {
                         return;
                     }
- 
+
                     // 从卡片中查找链接以提取BVID
                     const link = card.href; // 卡片本身就是链接元素
                     const match = link && /bv\w{10}/i.exec(link);
- 
+
                     if (match && match[0]) {
                     const bvid = match[0];
                         console.log(`[BiliHealth Scan] Found card with BVID: ${bvid}`);
                         processedCards.add(card); // 立即标记为处理中
- 
+
                         // 异步获取统计数据并显示评分
                         fetchFullStats(bvid).then(stat => {
                             if (stat) {
                                 console.log(`[BiliHealth Scan] Got stats for ${bvid}, calculating rating...`);
                                 const ratingInfo = BiliRating.getFullRatingInfo(stat);
                                 const { displayRatio, rating } = ratingInfo;
- 
+
                                 // 创建评分元素
                                 const ratingSpan = document.createElement('span');
                                 ratingSpan.className = 'bili-health-rating-span';
                                 console.log("[BiliHealth Scan] Creating rating span...");
- 
+
                                 // 获取现有统计元素的大小参考
                                 const statsArea = card.querySelector('.bili-cover-card__stats');
                                 if (statsArea) {
                                     const existingStat = statsArea.querySelector('span:not(.bili-health-rating-span)');
                                     const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
                                     const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px';
- 
+
                                     // 填充评分内容
                                     ratingSpan.innerHTML = `
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
@@ -711,11 +729,11 @@
                                             </svg>
                                             <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>
                                         `;
- 
+
                                     // 获取所有统计元素
                                     const statElements = Array.from(statsArea.querySelectorAll('.bili-cover-card__stat'));
                                     console.log(`[BiliHealth Scan] Found ${statElements.length} stats within container for ${bvid}.`);
- 
+
                                     // 根据统计元素数量决定插入位置
                                     if (statElements.length >= 2) {
                                         console.log(`[BiliHealth Scan] Inserting rating after second stat for ${bvid}.`);
@@ -726,7 +744,7 @@
                                         // 如果统计值少于2个,追加到末尾
                                         statsArea.appendChild(ratingSpan);
                                     }
- 
+
                                     console.log(`[BiliHealth Scan] Successfully added rating to card ${bvid}`, { displayRatio, ratingText: rating.text });
                                 } else {
                                     console.warn(`[BiliHealth Scan] Could not find stats area for card ${bvid}`);
@@ -744,10 +762,10 @@
                         });
                 console.log(`[BiliHealth Scan] Video card processing loop finished.`);
                 }
- 
+
             // 初始处理
             handleCards();
- 
+
             // 监听DOM变化
             const observer = new MutationObserver((mutations) => {
                 let shouldHandle = false;
@@ -769,13 +787,13 @@
                      // if (mutation.type === 'attributes' && ...) { ... }
                      if(shouldHandle) break; // 如果 shouldHandle 已经为 true，无需检查更多变化
                     }
- 
+
                 if (shouldHandle) {
                      console.log("[BiliHealth Scan] 由于 DOM 变化触发 handleCards");
                     setTimeout(handleCards, 50); // 使用小延迟
                 }
             });
- 
+
             // 监听滚动事件 - 主要用于懒加载
             let scrollTimer = null; // 使用本地计时器变量
             window.addEventListener('scroll', () => {
@@ -786,42 +804,42 @@
                      handleCards();
                  }, 100); // 根据需要调整延迟时间
             });
- 
+
             // 开始观察 body 的变化
             observer.observe(document.body, {
                 childList: true, // 观察子节点的添加或删除
                 subtree: true,   // 观察所有后代节点
                 // attributes: true // 如果需要可以重新启用，但 childList+subtree 通常足够用于新元素
             });
- 
+
         });
     }
- 
+
      // 空间主页卡片处理
     function spacePageLogic() {
         document.addEventListener('DOMContentLoaded', function() {
             console.log("[BiliHealth Scan] 初始化空间页面逻辑");
             const processedStatsContainers = new Set(); // 用于追踪已处理的统计容器
- 
+
             function handleCards() {
                 console.log("[BiliHealth Scan] 在空间页面运行 handleCards");
                 // 首先查找所有潜在的统计容器，因为它们是一个一致的标记
                 // 基于之前尝试和常见模式扩展选择器
-                const statsContainers = Array.from(document.querySelectorAll('.bili-video-card__stats--left, .bili-cover-card__stats, .info .watch-info, .stat, .card-item .count, .info, .meta, .metrics, .count-info, .number, .info-count')); 
+                const statsContainers = Array.from(document.querySelectorAll('.bili-video-card__stats--left, .bili-cover-card__stats, .info .watch-info, .stat, .card-item .count, .info, .meta, .metrics, .count-info, .number, .info-count'));
                 console.log(`[BiliHealth Scan] 找到 ${statsContainers.length} 个潜在统计容器`);
- 
+
                 statsContainers.forEach(statsContainer => {
                     // 检查此统计容器是否已处理
                     if (processedStatsContainers.has(statsContainer)) {
                         return;
                     }
- 
+
                     // 查找包含 BVID 的父链接元素
                     // 从统计容器向上遍历 DOM 树以找到相关链接
                     let currentElement = statsContainer;
                     let linkElement = null;
                     let bvid = null;
- 
+
                     while (currentElement && currentElement !== document.body) {
                         // 检查当前元素是否是带有 BVID 的链接
                         if (currentElement.tagName === 'A') {
@@ -833,7 +851,7 @@
                                 break; // 找到链接和 BVID，停止向上搜索
                             }
                         }
- 
+
                         // 同时检查当前元素内的链接（同级或附近父元素中的嵌套）
                         const nestedLink = currentElement.querySelector('a[href*="/video/BV"], a[data-aid], a[data-bvid]'); // 添加更多链接模式
                          if(nestedLink) { // 如果找到嵌套链接，检查其 href/data 属性
@@ -845,56 +863,56 @@
                                    break; // 找到链接和 BVID，停止向上搜索
                               }
                          }
- 
+
                         currentElement = currentElement.parentElement;
                     }
- 
+
                     if (!bvid) {
                         // 无法为此统计容器找到相关的 BVID 链接
                          // console.log("[BiliHealth Scan] 无法为统计容器找到 BVID:", statsContainer); // 过于冗长
                         processedStatsContainers.add(statsContainer); // 标记为已处理以避免重新检查
                         return;
                     }
- 
+
                     // 检查此统计容器中是否已存在评分元素
                     if (statsContainer.querySelector('.bili-health-rating-span')) {
                          // console.log(`[BiliHealth Scan] 统计容器中已存在 ${bvid} 的评分，跳过`); // 过于冗长
                          processedStatsContainers.add(statsContainer); // 标记为已处理
                         return;
                     }
-                    
+
                     console.log(`[BiliHealth Scan] 找到统计容器和 BVID ${bvid}，获取统计信息...`);
                     processedStatsContainers.add(statsContainer); // 立即标记为处理中
- 
+
                     // 异步获取统计信息并注入
                     fetchFullStats(bvid).then(stat => {
                         if (!stat) {
                             console.warn(`[BiliHealth Scan] 未返回 ${bvid} 的统计信息`);
                             return;
                         }
- 
+
                         console.log(`[BiliHealth Scan] 获取到 ${bvid} 的统计信息，注入评分`);
                         const span = document.createElement('span');
                         span.className = 'bili-health-rating-span';
                         const ratingInfo = BiliRating.getFullRatingInfo(stat);
                         const { displayRatio, rating } = ratingInfo;
-                        
+
                         // 从此容器内的现有统计元素获取大小参考
-                        const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)'); 
+                        const existingStat = statsContainer.querySelector('span:not(.bili-health-rating-span)');
                         const fontSize = existingStat ? window.getComputedStyle(existingStat).fontSize : '13px';
-                        const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px'; 
-                        
+                        const iconHeight = existingStat ? existingStat.offsetHeight + 'px' : '14px';
+
                         span.innerHTML = `
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
                                 height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                                 <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
                             </svg>
                             <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>`;
-                        
+
                         // 获取此容器内的所有统计元素
                         const statElements = Array.from(statsContainer.children);
                         console.log(`[BiliHealth Scan] 为 ${bvid} 在容器中找到 ${statElements.length} 个统计信息`);
-                        
+
                         // 根据统计数量确定插入位置
                         if (statElements.length === 2) {
                             console.log(`[BiliHealth Scan] 为 ${bvid} 在两个统计信息之间插入评分`);
@@ -912,16 +930,16 @@
                             statsContainer.appendChild(span);
                         }
                         console.log(`[BiliHealth Scan] 成功为 ${bvid} 注入评分`);
- 
+
                     }).catch(error => {
                          console.error(`[BiliHealth Scan] 获取统计信息或注入评分时出错 ${bvid}:`, error);
                     });
                 });
             }
- 
+
             // 初始处理
             handleCards();
- 
+
             // 在 body 上使用单个 MutationObserver
             const observer = new MutationObserver((mutations) => {
                 let shouldHandle = false;
@@ -930,7 +948,7 @@
                      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
                          for (const node of mutation.addedNodes) {
                               // 检查添加的节点本身或其后代是否包含潜在的统计容器或卡片
-                            if (node.nodeType === Node.ELEMENT_NODE && 
+                            if (node.nodeType === Node.ELEMENT_NODE &&
                                  (node.matches('.bili-video-card__stats--left, .bili-cover-card__stats, .info .watch-info, .stat, .card-item .count, .info, .meta, .metrics, .count-info, .number, .info-count') ||
                                   node.querySelector('.bili-video-card__stats--left, .bili-cover-card__stats, .info .watch-info, .stat, .card-item .count, .info, .meta, .metrics, .count-info, .number, .info-count') ||
                                   node.matches('div.bili-video-card, div.bili-cover-card, .list-box .content, .ugc-list .list-item, .slide-list .card-item, .video-item, .media-card, .cube-list .cube-card, .feed-card, .video-card') ||
@@ -945,13 +963,13 @@
                      // if (mutation.type === 'attributes' && ...) { ... }
                      if(shouldHandle) break; // 如果 shouldHandle 已经为 true，无需检查更多变化
                     }
- 
+
                 if (shouldHandle) {
                      console.log("[BiliHealth Scan] 由于 DOM 变化触发 handleCards");
                     setTimeout(handleCards, 50); // 使用小延迟
                 }
             });
- 
+
             // 监听滚动事件 - 主要用于懒加载
             let scrollTimer = null; // 使用本地计时器变量
             window.addEventListener('scroll', () => {
@@ -962,15 +980,15 @@
                      handleCards();
                  }, 100); // 根据需要调整延迟时间
             });
- 
+
             // 开始观察 body 的变化
             observer.observe(document.body, {
                 childList: true, // 观察子节点的添加或删除
                 subtree: true,   // 观察所有后代节点
                 // attributes: true // 如果需要可以重新启用，但 childList+subtree 通常足够用于新元素
             });
- 
+
         });
     }
- 
-})(); 
+
+})();
