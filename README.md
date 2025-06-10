@@ -124,7 +124,7 @@ All data comes from publicly available Bilibili information. The rating algorith
 
 ## Links
 - [Greasy Fork](https://greasyfork.org/zh-CN/scripts/538031-b%E7%AB%99-bilibili-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9-%E4%B8%80%E9%94%AE%E4%B8%89%E8%BF%9E%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88-bilihealth-scan)
-- [GitHub Repository](https://github.com/ch777777/BiliHealth-Scan)
+- [GitHub Repository](https://github.com/xiangye277/BiliHealth-Scan)
 
 # 权重计算逻辑
 
