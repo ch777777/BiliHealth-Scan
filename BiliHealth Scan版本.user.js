@@ -51,10 +51,11 @@
     GM.addStyle(`
         /* 评级文本颜色 */
         .rainbow-text {
-            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background: linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff);
+            background-size: 600% 600%;
             -webkit-background-clip: text;
-            color: transparent;
-            animation: rainbow 5s linear infinite;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 3s ease infinite;
         }
         .gold-text { color: #FFD700 !important; }
         .limegreen-text { color: #32CD32 !important; }
