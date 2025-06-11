@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.9.3
+// @version      1.9.3v
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -183,7 +183,7 @@
             return ((weightedInteractions / data.view) * 100 * 3).toFixed(2);
         },
         // 获取显示用好评率
-        getDisplayRatio(data) {
+        getDisplayRatio(data, forceCalculate = false) {
             const ratio = parseFloat(this.calculateWeightedRatio(data));
 
             // 定义播放量阈值和对应的最大好评率上限
@@ -194,8 +194,8 @@
 
             let currentRatio = ratio;
 
-            // 对于播放量小于3000的视频，直接返回0
-            if (data.view < 3000) return "0.00";
+            // 对于播放量小于3000的视频，直接返回0，除非强制计算
+            if (!forceCalculate && data.view < 3000) return "0.00";
 
             // 根据播放量应用好评率上限
             for (const threshold of VIEW_THRESHOLDS) {
@@ -293,8 +293,22 @@
         // 获取完整评级信息
         getFullRatingInfo(data, pubdate) {
             const normalizedData = this.normalizeData(data);
-            const displayRatio = this.getDisplayRatio(normalizedData);
-            const rating = this.getRating(displayRatio, { ...normalizedData, pubdate });
+            // 先计算一个临时的好评率和评级，用于判断是否为"有待观察"
+            const tempDisplayRatio = this.getDisplayRatio(normalizedData, true); // 强制计算，不受3000播放量限制
+            const tempRating = this.getRating(tempDisplayRatio, { ...normalizedData, pubdate });
+
+            let displayRatio, rating;
+
+            if (tempRating.isPending) {
+                // 如果是"有待观察"，则使用强制计算的真实好评率
+                displayRatio = tempDisplayRatio;
+                rating = tempRating;
+            } else {
+                // 否则，使用正常的逻辑，可能因为播放量低于3000而显示0.00
+                displayRatio = this.getDisplayRatio(normalizedData, false);
+                rating = this.getRating(displayRatio, { ...normalizedData, pubdate });
+            }
+
             const likeRatio = this.calculateRatio(normalizedData, 'like', this.WEIGHTS.like);
             const coinRatio = this.calculateRatio(normalizedData, 'coin', this.WEIGHTS.coin);
             const favoriteRatio = this.calculateRatio(normalizedData, 'favorite', this.WEIGHTS.favorite);
@@ -467,7 +481,7 @@
             if (ratingInfo.rating.isPending) {
                 comprehensiveRating.innerHTML = '';
             } else {
-            comprehensiveRating.innerHTML = `<span id="comprehensive-rating-text" class="${ratingInfo.rating.className}">${ratingInfo.rating.text}</span>`;
+                comprehensiveRating.innerHTML = `<span id="comprehensive-rating-text" class="${ratingInfo.rating.className}">${ratingInfo.rating.text}</span>`;
             }
             // 好评率展示
             const goodRate = document.createElement('div');
@@ -494,10 +508,11 @@
                 const newRatingInfo = BiliRating.getFullRatingInfo(videoStatData, videoPubdate);
                 const comprehensiveRatingText = document.querySelector('#comprehensive-rating-text');
                 const goodRateText = goodRate.querySelector('#good-rate-text');
+
+                // Update comprehensive rating
                 if (newRatingInfo.rating.isPending) {
                     if (comprehensiveRatingText) comprehensiveRatingText.textContent = '';
                     comprehensiveRating.innerHTML = '';
-                    goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text} (${newRatingInfo.displayRatio}%)</span>`;
                 } else {
                     if (comprehensiveRatingText) {
                         comprehensiveRatingText.className = newRatingInfo.rating.className;
@@ -505,12 +520,16 @@
                     } else {
                         comprehensiveRating.innerHTML = `<span id="comprehensive-rating-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text}</span>`;
                     }
+                }
+
+                // Update good rate display
                 goodRateText.className = newRatingInfo.rating.className;
-                if (newRatingInfo.displayRatio === "小破站必刷" || newRatingInfo.displayRatio === "刷到必看") {
+                if (newRatingInfo.rating.isPending) { // Explicitly check for isPending here for the goodRate format
+                    goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text} (${newRatingInfo.displayRatio}%)</span>`;
+                } else if (newRatingInfo.displayRatio === "小破站必刷" || newRatingInfo.displayRatio === "刷到必看") {
                     goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>`;
                 } else {
                     goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>%`;
-                }
                 }
             }
             // 监听工具栏元素出现后插入自定义元素
