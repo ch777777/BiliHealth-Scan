@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.9
+// @version      1.9.3
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -33,6 +33,7 @@
         orangered: 'orangered-text',
         limegreen: 'limegreen-text',
         yellowgreen: 'yellowgreen-text',
+        pending: 'pending-text'  // 新增"有待观察"的颜色类
     };
 
     // 评级文本配置
@@ -50,11 +51,10 @@
     GM.addStyle(`
         /* 评级文本颜色 */
         .rainbow-text {
-            background: linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff);
-            background-size: 600% 600%;
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: rainbow 3s ease infinite;
+            color: transparent;
+            animation: rainbow 5s linear infinite;
         }
         .gold-text { color: #FFD700 !important; }
         .limegreen-text { color: #32CD32 !important; }
@@ -62,10 +62,19 @@
         .orange-text { color: #FFA500 !important; }
         .orangered-text { color: #FF4500 !important; }
         .red-text { color: #FF0000 !important; }
+        .pending-text {
+            color: #808080 !important;
+            font-style: italic;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
         @keyframes rainbow {
-            0%{background-position:0% 50%}
-            50%{background-position:100% 50%}
-            100%{background-position:0% 50%}
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
         /* 卡片统计信息自适应样式（1.7版UI） */
         .bili-video-card__stats--left > span,
@@ -235,18 +244,31 @@
             return displayRatioString;
         },
         // 获取评级
-        getRating(displayRatio) {
+        getRating(displayRatio, data = null) {
+            // 检查是否为"有待观察"评级
+            if (data && data.pubdate) {
+                const now = Math.floor(Date.now() / 1000);
+                const threeDaysInSeconds = 3 * 24 * 60 * 60;
+                const isWithinThreeDays = (now - data.pubdate) <= threeDaysInSeconds;
+                const isLowViews = data.view >= 0 && data.view <= 5000;
+                const isLowScore = parseFloat(displayRatio) >= 0 && parseFloat(displayRatio) <= 40;
+
+                if (isWithinThreeDays && isLowViews && isLowScore) {
+                    return { text: '有待观察', className: RATING_COLORS.pending, isPending: true };
+                }
+            }
+
             if (displayRatio === "小破站必刷" || displayRatio === "刷到必看") {
-                return { text: '满分神作', className: this.RATING_COLORS.rainbow };
+                return { text: '满分神作', className: RATING_COLORS.rainbow, isPending: false };
             }
             const ratioNum = parseFloat(displayRatio);
-            if (ratioNum >= 100) return { text: '满分神作', className: this.RATING_COLORS.rainbow };
-            if (ratioNum >= 95) return { text: '好评如潮', className: this.RATING_COLORS.red };
-            if (ratioNum >= 80) return { text: '非常好评', className: this.RATING_COLORS.gold };
-            if (ratioNum >= 70) return { text: '多半好评', className: this.RATING_COLORS.orange };
-            if (ratioNum >= 40) return { text: '褒贬不一', className: this.RATING_COLORS.orangered };
-            if (ratioNum >= 20) return { text: '多半差评', className: this.RATING_COLORS.limegreen };
-            return { text: '差评如潮', className: this.RATING_COLORS.yellowgreen };
+            if (ratioNum >= 100) return { text: '满分神作', className: RATING_COLORS.rainbow, isPending: false };
+            if (ratioNum >= 95) return { text: '好评如潮', className: RATING_COLORS.red, isPending: false };
+            if (ratioNum >= 80) return { text: '非常好评', className: RATING_COLORS.gold, isPending: false };
+            if (ratioNum >= 70) return { text: '多半好评', className: RATING_COLORS.orange, isPending: false };
+            if (ratioNum >= 40) return { text: '褒贬不一', className: RATING_COLORS.orangered, isPending: false };
+            if (ratioNum >= 20) return { text: '多半差评', className: RATING_COLORS.limegreen, isPending: false };
+            return { text: '差评如潮', className: RATING_COLORS.yellowgreen, isPending: false };
         },
         // 计算各项比率
         calculateRatio(data, type, weight = 1) {
@@ -268,10 +290,10 @@
             return { rate, color };
         },
         // 获取完整评级信息
-        getFullRatingInfo(data) {
+        getFullRatingInfo(data, pubdate) {
             const normalizedData = this.normalizeData(data);
             const displayRatio = this.getDisplayRatio(normalizedData);
-            const rating = this.getRating(displayRatio);
+            const rating = this.getRating(displayRatio, { ...normalizedData, pubdate });
             const likeRatio = this.calculateRatio(normalizedData, 'like', this.WEIGHTS.like);
             const coinRatio = this.calculateRatio(normalizedData, 'coin', this.WEIGHTS.coin);
             const favoriteRatio = this.calculateRatio(normalizedData, 'favorite', this.WEIGHTS.favorite);
@@ -291,6 +313,8 @@
         getPlainText(displayRatio, ratingText) {
             if (displayRatio === "小破站必刷" || displayRatio === "刷到必看") {
                 return `该作品好评率: ${displayRatio} | 评级: ${ratingText}`;
+            } else if (ratingText === "有待观察") {
+                return `该作品好评率: ${displayRatio}% | 评级: ${ratingText} (发布3天内，播放量较低)`;
             } else {
                 return `该作品好评率: ${displayRatio}% | 评级: ${ratingText}`;
             }
@@ -307,8 +331,12 @@
             const response = await fetch(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`);
             const data = await response.json();
             if (data && data.code === 0 && data.data && data.data.stat) {
-                statCache.set(bvid, data.data.stat);
-                return data.data.stat;
+                const result = {
+                    stat: data.data.stat,
+                    pubdate: data.data.pubdate
+                };
+                statCache.set(bvid, result);
+                return result;
             }
         } catch (error) {
             console.error(`获取BVID ${bvid} 的数据失败:`, error);
@@ -320,7 +348,7 @@
     const BiliRatingUI = {
         // 主页卡片渲染 (恢复简单附加到末尾，保留样式自适应)
         addLikeRateToCard(node, urlToDataMap, key) {
-            const stat = urlToDataMap.get(key);
+            const data = urlToDataMap.get(key);
             urlToDataMap.delete(key);
             // Target stats container for main page cards
             const statsContainer = node.querySelector('div.bili-video-card__stats--left');
@@ -328,10 +356,10 @@
             if (statsContainer.querySelector('.bili-health-rating-span')) {
                 return;
             }
-            if (stat != null) {
+            if (data != null) {
                 const span = document.createElement('span');
                 span.className = 'bili-health-rating-span';
-                const ratingInfo = BiliRating.getFullRatingInfo(stat);
+                const ratingInfo = BiliRating.getFullRatingInfo(data.stat, data.pubdate);
                 const { displayRatio, rating } = ratingInfo;
 
                 // Get size reference from existing stat elements within THIS container
@@ -344,7 +372,7 @@
                         height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                         <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
                     </svg>
-                    <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>`;
+                    <span class="${rating.className}" style="font-size: ${fontSize};">${rating.isPending ? rating.text : (displayRatio + ((displayRatio === "小破站必刷" || displayRatio === "刷到必看") ? "" : "%"))}</span>`;
 
                 // Simply append to the end
                 statsContainer.appendChild(span);
@@ -363,7 +391,7 @@
             if (stat != null) {
                 const span = document.createElement('span');
                 span.className = 'bili-health-rating-span';
-                const ratingInfo = BiliRating.getFullRatingInfo(stat);
+                const ratingInfo = BiliRating.getFullRatingInfo(stat.stat, stat.pubdate);
                 const { displayRatio, rating } = ratingInfo;
 
                 // Get size reference from existing stat elements within THIS container
@@ -376,7 +404,7 @@
                         height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                         <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
                     </svg>
-                    <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>`;
+                    <span class="${rating.className}" style="font-size: ${fontSize};">${rating.isPending ? rating.text : (displayRatio + ((displayRatio === "小破站必刷" || displayRatio === "刷到必看") ? "" : "%"))}</span>`;
 
                 // Simply append to the end
                 statsContainer.appendChild(span);
@@ -417,7 +445,8 @@
             `);
             // 获取视频统计数据
             const videoStatData = unsafeWindow.__INITIAL_STATE__.videoData.stat;
-            const ratingInfo = BiliRating.getFullRatingInfo(videoStatData);
+            const videoPubdate = unsafeWindow.__INITIAL_STATE__.videoData.pubdate;
+            const ratingInfo = BiliRating.getFullRatingInfo(videoStatData, videoPubdate);
             // 创建各项比率展示区
             const div = { like: {}, coin: {}, favorite: {}, share: {} };
             for (let e in div) {
@@ -434,11 +463,17 @@
             // 综合评级展示
             const comprehensiveRating = document.createElement('div');
             comprehensiveRating.className = 'comprehensive-rating';
+            if (ratingInfo.rating.isPending) {
+                comprehensiveRating.innerHTML = '';
+            } else {
             comprehensiveRating.innerHTML = `<span id="comprehensive-rating-text" class="${ratingInfo.rating.className}">${ratingInfo.rating.text}</span>`;
+            }
             // 好评率展示
             const goodRate = document.createElement('div');
             goodRate.className = 'good-rate';
-            if (ratingInfo.displayRatio === "小破站必刷" || ratingInfo.displayRatio === "刷到必看") {
+            if (ratingInfo.rating.isPending) {
+                goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${ratingInfo.rating.className}">${ratingInfo.rating.text} (${ratingInfo.displayRatio}%)</span>`;
+            } else if (ratingInfo.displayRatio === "小破站必刷" || ratingInfo.displayRatio === "刷到必看") {
                 goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${ratingInfo.rating.className}">${ratingInfo.displayRatio}</span>`;
             } else {
                 goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${ratingInfo.rating.className}">${ratingInfo.displayRatio}</span>%`;
@@ -455,24 +490,27 @@
             `;
             // 更新评级显示的函数
             function updateRatingDisplay() {
-                const newStatData = unsafeWindow.__INITIAL_STATE__.videoData.stat;
-                const newRatingInfo = BiliRating.getFullRatingInfo(newStatData);
-                for (let e in div) {
-                    let data = div[e].querySelector('#data');
-                    const ratio = newRatingInfo[e + 'Ratio'];
-                    data.style.color = ratio.color;
-                    data.textContent = ratio.rate;
-                }
+                const newRatingInfo = BiliRating.getFullRatingInfo(videoStatData, videoPubdate);
+                const comprehensiveRatingText = document.querySelector('#comprehensive-rating-text');
                 const goodRateText = goodRate.querySelector('#good-rate-text');
+                if (newRatingInfo.rating.isPending) {
+                    if (comprehensiveRatingText) comprehensiveRatingText.textContent = '';
+                    comprehensiveRating.innerHTML = '';
+                    goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text} (${newRatingInfo.displayRatio}%)</span>`;
+                } else {
+                    if (comprehensiveRatingText) {
+                        comprehensiveRatingText.className = newRatingInfo.rating.className;
+                        comprehensiveRatingText.textContent = newRatingInfo.rating.text;
+                    } else {
+                        comprehensiveRating.innerHTML = `<span id="comprehensive-rating-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text}</span>`;
+                    }
                 goodRateText.className = newRatingInfo.rating.className;
                 if (newRatingInfo.displayRatio === "小破站必刷" || newRatingInfo.displayRatio === "刷到必看") {
                     goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>`;
                 } else {
                     goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>%`;
                 }
-                const ratingText = comprehensiveRating.querySelector('#comprehensive-rating-text');
-                ratingText.textContent = newRatingInfo.rating.text;
-                ratingText.className = newRatingInfo.rating.className;
+                }
             }
             // 监听工具栏元素出现后插入自定义元素
             let addElementObserver = new MutationObserver(function (mutationsList) {
@@ -706,7 +744,7 @@
                         fetchFullStats(bvid).then(stat => {
                             if (stat) {
                                 console.log(`[BiliHealth Scan] Got stats for ${bvid}, calculating rating...`);
-                                const ratingInfo = BiliRating.getFullRatingInfo(stat);
+                                const ratingInfo = BiliRating.getFullRatingInfo(stat.stat, stat.pubdate);
                                 const { displayRatio, rating } = ratingInfo;
 
                                 // 创建评分元素
@@ -726,10 +764,8 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${iconHeight}"
                                             height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                                             <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
-                                            </svg>
-                                            <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>
-                                        `;
-
+                                        </svg>
+                                        <span class="${rating.className}" style="font-size: ${fontSize};">${rating.isPending ? rating.text : (displayRatio + ((displayRatio === "小破站必刷" || displayRatio === "刷到必看") ? "" : "%"))}</span>`;
                                     // 获取所有统计元素
                                     const statElements = Array.from(statsArea.querySelectorAll('.bili-cover-card__stat'));
                                     console.log(`[BiliHealth Scan] Found ${statElements.length} stats within container for ${bvid}.`);
@@ -894,7 +930,7 @@
                         console.log(`[BiliHealth Scan] 获取到 ${bvid} 的统计信息，注入评分`);
                         const span = document.createElement('span');
                         span.className = 'bili-health-rating-span';
-                        const ratingInfo = BiliRating.getFullRatingInfo(stat);
+                        const ratingInfo = BiliRating.getFullRatingInfo(stat.stat, stat.pubdate);
                         const { displayRatio, rating } = ratingInfo;
 
                         // 从此容器内的现有统计元素获取大小参考
@@ -907,7 +943,7 @@
                                 height="${iconHeight}" fill="currentColor" style="margin-right:2px;">
                                 <path d="M594.176 151.168a34.048 34.048 0 0 0-29.184 10.816c-11.264 13.184-15.872 24.064-21.504 40.064l-1.92 5.632c-5.632 16.128-12.8 36.864-27.648 63.232-25.408 44.928-50.304 74.432-86.208 97.024-23.04 14.528-43.648 26.368-65.024 32.576v419.648a4569.408 4569.408 0 0 0 339.072-4.672c38.72-2.048 72-21.12 88.96-52.032 21.504-39.36 47.168-95.744 63.552-163.008a782.72 782.72 0 0 0 22.528-163.008c0.448-16.832-13.44-32.256-35.328-32.256h-197.312a32 32 0 0 1-28.608-46.336l0.192-0.32 0.64-1.344 2.56-5.504c2.112-4.8 5.12-11.776 8.32-20.16 6.592-17.088 13.568-39.04 16.768-60.416 4.992-33.344 3.776-60.16-9.344-84.992-14.08-26.688-30.016-33.728-40.512-34.944zM691.84 341.12h149.568c52.736 0 100.864 40.192 99.328 98.048a845.888 845.888 0 0 1-24.32 176.384 742.336 742.336 0 0 1-69.632 178.56c-29.184 53.44-84.48 82.304-141.76 85.248-55.68 2.88-138.304 5.952-235.712 5.952-96 0-183.552-3.008-244.672-5.76-66.432-3.136-123.392-51.392-131.008-119.872a1380.672 1380.672 0 0 1-0.768-296.704c7.68-72.768 70.4-121.792 140.032-121.792h97.728c13.76 0 28.16-5.504 62.976-27.456 24.064-15.104 42.432-35.2 64.512-74.24 11.904-21.184 17.408-36.928 22.912-52.8l2.048-5.888c6.656-18.88 14.4-38.4 33.28-60.416a97.984 97.984 0 0 1 85.12-32.768c35.264 4.096 67.776 26.88 89.792 68.608 22.208 42.176 21.888 84.864 16 124.352a342.464 342.464 0 0 1-15.424 60.544z m-393.216 477.248V405.184H232.96c-40.448 0-72.448 27.712-76.352 64.512a1318.912 1318.912 0 0 0 0.64 282.88c3.904 34.752 32.96 61.248 70.4 62.976 20.8 0.96 44.8 1.92 71.04 2.816z" fill="currentColor"></path>
                             </svg>
-                            <span class="${rating.className}" style="font-size: ${fontSize};">${displayRatio}${displayRatio === "小破站必刷" || displayRatio === "刷到必看" ? "" : "%"}</span>`;
+                            <span class="${rating.className}" style="font-size: ${fontSize};">${rating.isPending ? rating.text : (displayRatio + ((displayRatio === "小破站必刷" || displayRatio === "刷到必看") ? "" : "%"))}</span>`;
 
                         // 获取此容器内的所有统计元素
                         const statElements = Array.from(statsContainer.children);
