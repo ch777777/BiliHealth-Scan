@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.9.3.1
+// @version      1.9.6
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -505,31 +505,62 @@
             `;
             // 更新评级显示的函数
             function updateRatingDisplay() {
-                const newRatingInfo = BiliRating.getFullRatingInfo(videoStatData, videoPubdate);
+                // 每次都获取最新数据
+                const latestStat = unsafeWindow.__INITIAL_STATE__.videoData.stat;
+                const latestPubdate = unsafeWindow.__INITIAL_STATE__.videoData.pubdate;
+                const newRatingInfo = BiliRating.getFullRatingInfo(latestStat, latestPubdate);
                 const comprehensiveRatingText = document.querySelector('#comprehensive-rating-text');
-                const goodRateText = goodRate.querySelector('#good-rate-text');
+                const goodRateText = document.querySelector('.good-rate #good-rate-text');
 
                 // Update comprehensive rating
                 if (newRatingInfo.rating.isPending) {
                     if (comprehensiveRatingText) comprehensiveRatingText.textContent = '';
-                    comprehensiveRating.innerHTML = '';
+                    const compDiv = document.querySelector('.comprehensive-rating');
+                    if (compDiv) compDiv.innerHTML = '';
                 } else {
                     if (comprehensiveRatingText) {
                         comprehensiveRatingText.className = newRatingInfo.rating.className;
                         comprehensiveRatingText.textContent = newRatingInfo.rating.text;
                     } else {
-                        comprehensiveRating.innerHTML = `<span id="comprehensive-rating-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text}</span>`;
+                        const compDiv = document.querySelector('.comprehensive-rating');
+                        if (compDiv) compDiv.innerHTML = `<span id="comprehensive-rating-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text}</span>`;
                     }
                 }
 
                 // Update good rate display
-                goodRateText.className = newRatingInfo.rating.className;
-                if (newRatingInfo.rating.isPending) { // Explicitly check for isPending here for the goodRate format
-                    goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text} (${newRatingInfo.displayRatio}%)</span>`;
-                } else if (newRatingInfo.displayRatio === "小破站必刷" || newRatingInfo.displayRatio === "刷到必看") {
-                    goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>`;
-                } else {
-                    goodRate.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>%`;
+                const goodDiv = document.querySelector('.good-rate');
+                if (goodRateText) goodRateText.className = newRatingInfo.rating.className;
+                if (goodDiv) {
+                    if (newRatingInfo.rating.isPending) {
+                        goodDiv.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.rating.text} (${newRatingInfo.displayRatio}%)</span>`;
+                    } else if (newRatingInfo.displayRatio === "小破站必刷" || newRatingInfo.displayRatio === "刷到必看") {
+                        goodDiv.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>`;
+                    } else {
+                        goodDiv.innerHTML = `好评率：<span id="good-rate-text" class="${newRatingInfo.rating.className}">${newRatingInfo.displayRatio}</span>%`;
+                    }
+                }
+
+                // 更新点赞、投币、收藏、转发的≈xx%
+                const ratioTypes = ['like', 'coin', 'favorite', 'share'];
+                for (let type of ratioTypes) {
+                    const btn = document.querySelector(`.video-toolbar-left .video-${type}`);
+                    if (btn && btn.parentNode) {
+                        // 查找同级所有div，找到包含≈的那个
+                        const divs = Array.from(btn.parentNode.children).filter(child => child.tagName === 'DIV');
+                        for (let div of divs) {
+                            if (div.textContent.includes('≈')) {
+                                // 替换内容
+                                const ratio = newRatingInfo[type + 'Ratio'];
+                                div.innerHTML = `
+                                    <span style="margin-left: 5px;margin-right: 3px;font-size:13px;font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-weight: 500; line-height: 28px;">≈</span>
+                                    <span id="data" style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; color:${ratio.color};">${ratio.rate}</span>
+                                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; margin-left: 2px;"> %</span>
+                                `;
+                                break;
+                            }
+                        }
+                        // 如果没有找到"≈"div，则不插入新div
+                    }
                 }
             }
             // 监听工具栏元素出现后插入自定义元素
@@ -570,7 +601,7 @@
             new MutationObserver(function () {
                 const newBvid = unsafeWindow.__INITIAL_STATE__.videoData.bvid;
                 if (newBvid !== currentBvid) {
-                    updateRatingDisplay();
+                    setTimeout(updateRatingDisplay, 200); // 延迟200ms，确保数据已切换
                     currentBvid = newBvid;
                 }
             }).observe(document.body, {
