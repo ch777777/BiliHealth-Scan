@@ -18,7 +18,37 @@
 <div align="center">
   <h3>🎯 精准评估 | 🚀 实时分析 | 💡 智能推荐</h3>
 </div>
+# 🎉 BiliHealth Scan 2.0 版本预告 / 2.0 Major Update Preview
+<a name="chinese"></a>
+## 中文
 
+BiliHealth Scan 即将迎来 2.0 大版本！本次升级将带来全新好评率算法、分层加成机制、特殊评级文案、视觉体验优化等多项核心革新。我们致力于为每一位内容创作者和观众，提供更公平、更科学、更透明的视频质量评价体系，让优质内容不再被埋没，让每一次互动都被真实看见。
+
+**2.0 主要亮点：**
+- 🧮 全新好评率计算体系，动态"有效播放量"算法，极高播放量视频不再被稀释
+- ⚖️ 互动权重全面调整，评价更严谨
+- 📈 多级分层加成机制，优质高热视频获得更公正的加成
+- 🏷️ 特殊评级文案（如"刷到必看""小破站必刷"）直观展示
+- 🔒 好评率严格不超100%，移除高分膨胀机制
+- ✨ 视觉与交互体验全面升级，算法规则完全公开
+
+BiliHealth Scan 2.0，不只是算法升级，更是理念进化。感谢每一位用户的支持与反馈，敬请期待正式上线！
+
+---
+## English
+<a name="english"></a>
+
+BiliHealth Scan 2.0 is coming soon! This major update brings a brand-new rating algorithm, multi-level bonus mechanisms, special rating labels, and a fully upgraded visual and interactive experience. Our goal is to provide every creator and viewer with a fairer, more scientific, and more transparent video quality evaluation system—so that great content is never buried, and every interaction truly counts.
+
+**2.0 Highlights:**
+- 🧮 All-new "Effective View Count" algorithm for fairer ratings on viral videos
+- ⚖️ Rebalanced interaction weights for more rigorous evaluation
+- 📈 Multi-level bonus system to reward high-quality, high-engagement videos
+- 🏷️ Special rating labels ("Must-see", "Bilibili Must-watch") for outstanding content
+- 🔒 Strict cap: good rate never exceeds 100%, no more artificial inflation
+- ✨ Fully upgraded UI/UX and open, transparent algorithm rules
+
+BiliHealth Scan 2.0 is not just an algorithm upgrade, but a leap in philosophy. Thank you for your support—stay tuned for the official release! 
 <a name="english"></a>
 ## English
 
