@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         b站 | bilibili | 哔哩哔哩 | 一键三连健康探针（BiliHealth Scan）
 // @namespace    http://tampermonkey.net/
-// @version      1.9.6
+// @version      1.9.6.1
 // @description  一键三连健康探针（BiliHealth Scan）显示b站 | bilibili | 哔哩哔哩 点赞率、投币率、收藏率、转发率及Steam综合评级
 // @license      MIT
 // @author       向也
@@ -470,9 +470,11 @@
                 div[e].style.setProperty('align-items', 'center');
                 const ratio = ratingInfo[e + 'Ratio'];
                 div[e].innerHTML = `
+<span data-bh-type="${e}">
     <span style="margin-left: 5px;margin-right: 3px;font-size:13px;font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-weight: 500; line-height: 28px;">≈</span>
     <span id="data" style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; color:${ratio.color};">${ratio.rate}</span>
     <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; margin-left: 2px;"> %</span>
+</span>
 `;
             }
             // 综合评级展示
@@ -543,23 +545,15 @@
                 // 更新点赞、投币、收藏、转发的≈xx%
                 const ratioTypes = ['like', 'coin', 'favorite', 'share'];
                 for (let type of ratioTypes) {
-                    const btn = document.querySelector(`.video-toolbar-left .video-${type}`);
-                    if (btn && btn.parentNode) {
-                        // 查找同级所有div，找到包含≈的那个
-                        const divs = Array.from(btn.parentNode.children).filter(child => child.tagName === 'DIV');
-                        for (let div of divs) {
-                            if (div.textContent.includes('≈')) {
-                                // 替换内容
-                                const ratio = newRatingInfo[type + 'Ratio'];
-                                div.innerHTML = `
-                                    <span style="margin-left: 5px;margin-right: 3px;font-size:13px;font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-weight: 500; line-height: 28px;">≈</span>
-                                    <span id="data" style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; color:${ratio.color};">${ratio.rate}</span>
-                                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; margin-left: 2px;"> %</span>
-                                `;
-                                break;
-                            }
-                        }
-                        // 如果没有找到"≈"div，则不插入新div
+                    let ratio = newRatingInfo[type + 'Ratio'];
+                    // 精准替换≈xx%（data-bh-type）
+                    const approxSpan = document.querySelector(`[data-bh-type="${type}"]`);
+                    if (approxSpan) {
+                        approxSpan.innerHTML = `
+                            <span style="margin-left: 5px;margin-right: 3px;font-size:13px;font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-weight: 500; line-height: 28px;">≈</span>
+                            <span id="data" style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; color:${ratio.color};">${ratio.rate}</span>
+                            <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: 500; line-height: 28px; margin-left: 2px;"> %</span>
+                        `;
                     }
                 }
             }
