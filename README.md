@@ -8,10 +8,10 @@
 </div>
 
 <div align="center">
-  <img src="https://img.shields.io/github/stars/xiangye277/BiliHealth-Scan?style=social" alt="GitHub Stars">
-  <img src="https://img.shields.io/github/forks/xiangye277/BiliHealth-Scan?style=social" alt="GitHub Forks">
+  <img src="https://img.shields.io/github/stars/xiangye277/BiliHealth-Scan?style=social" alt="Stars">
+  <img src="https://img.shields.io/github/forks/xiangye277/BiliHealth-Scan?style=social" alt="Forks">
   <img src="https://img.shields.io/github/license/xiangye277/BiliHealth-Scan" alt="License">
-  <img src="https://img.shields.io/greasyfork/dt/538031" alt="Greasy Fork Downloads">
+  <img src="https://img.shields.io/greasyfork/dt/538031" alt="Downloads">
   <img src="https://img.shields.io/greasyfork/v/538031" alt="Version">
 </div>
 
